@@ -1,3 +1,5 @@
+/* MJ Autopilot SEO — Admin CSS v9.2.0 */
+
 .mj-admin-wrapper {
     background-color: #fcfbfa !important;
     padding: 30px;
@@ -24,3 +26,43 @@
 .text-orange { color: #E65100 !important; }
 .text-gold { color: #B8935A !important; }
 .action-btn { background-color: #B8935A !important; border-color: #A37F49 !important; border-radius: 6px !important; color: #fff !important; }
+
+/* ── Statuts de publication (V2) ── */
+.mj-badge-status {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+.mj-status-draft     { background: #F3F4F6; color: #6B7280; }
+.mj-status-review    { background: #FFF3E0; color: #E65100; }
+.mj-status-scheduled { background: #E3F2FD; color: #1565C0; }
+.mj-status-auto      { background: #E8F5E9; color: #2E7D32; }
+
+/* ── Score SEO (V2) ── */
+.mj-seo-score-widget { transition: box-shadow .2s; }
+.mj-seo-score-widget:hover { box-shadow: 0 4px 12px rgba(0,0,0,.08); }
+
+/* ── Calendrier (V2) ── */
+.mj-calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0;
+}
+.mj-cal-cell {
+    min-height: 90px;
+    border-right: 0.5px solid #EDE5D8;
+    border-bottom: 0.5px solid #EDE5D8;
+    padding: 6px;
+    background: #fff;
+    font-size: 10px;
+}
+.mj-cal-cell.today { background: #FFF8EE; }
+.mj-cal-cell.empty { background: #F7F3EE; }
+
+/* ── Tag tunnel (shared) ── */
+.tag-tofu { display: inline-block; font-size: 9px; padding: 2px 7px; border-radius: 20px; font-weight: 500; background: #D5EFEA; color: #0F6E56; }
+.tag-mofu { display: inline-block; font-size: 9px; padding: 2px 7px; border-radius: 20px; font-weight: 500; background: #F5EAD5; color: #7A4E20; }
+.tag-bofu { display: inline-block; font-size: 9px; padding: 2px 7px; border-radius: 20px; font-weight: 500; background: #FAE5DC; color: #993C1D; }

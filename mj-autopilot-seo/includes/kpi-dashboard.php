@@ -30,7 +30,7 @@ if (!function_exists('mj_render_kpi_dashboard_page')) {
         $index_bar_pct    = $total_published > 0 ? round($total_indexed / $total_published * 100) : 0;
         $pending_bar_pct  = $total_published > 0 ? round($total_pending / $total_published * 100) : 0;
 
-        // Top articles par clics GSC
+        // Top articles
         $top_articles = [];
         if ($table_exists) {
             $top_articles = $wpdb->get_results(
@@ -57,21 +57,36 @@ if (!function_exists('mj_render_kpi_dashboard_page')) {
             }
         }
 
-        $pos_tofu  = $tunnel_positions['TOFU']  ?? '—';
-        $pos_mofu  = $tunnel_positions['MOFU']  ?? '—';
-        $pos_bofu  = $tunnel_positions['BOFU']  ?? '—';
-
-        // Barres tunnels : inversées (position basse = bonne = barre plus longue)
-        // On normalise sur 30 comme max raisonnable
-        $bar_tofu = is_numeric($pos_tofu) ? max(0, round((30 - $pos_tofu) / 30 * 100)) : 0;
-        $bar_mofu = is_numeric($pos_mofu) ? max(0, round((30 - $pos_mofu) / 30 * 100)) : 0;
-        $bar_bofu = is_numeric($pos_bofu) ? max(0, round((30 - $pos_bofu) / 30 * 100)) : 0;
+        $pos_tofu  = $tunnel_positions['TOFU'] ?? '—';
+        $pos_mofu  = $tunnel_positions['MOFU'] ?? '—';
+        $pos_bofu  = $tunnel_positions['BOFU'] ?? '—';
+        $bar_tofu  = is_numeric($pos_tofu) ? max(0, round((30 - $pos_tofu) / 30 * 100)) : 0;
+        $bar_mofu  = is_numeric($pos_mofu) ? max(0, round((30 - $pos_mofu) / 30 * 100)) : 0;
+        $bar_bofu  = is_numeric($pos_bofu) ? max(0, round((30 - $pos_bofu) / 30 * 100)) : 0;
 
         $last_sync = get_option('mj_gsc_last_sync', '—');
+
+        // V2 — Score SEO moyen + stats GEO
+        $mj_posts = get_posts([
+            'post_type'      => 'post',
+            'post_status'    => 'publish',
+            'posts_per_page' => -1,
+            'meta_key'       => '_mj_tunnel',
+        ]);
+        $seo_scores = array_filter(array_map(fn($p) => (int) get_post_meta($p->ID, '_mj_seo_score', true), $mj_posts));
+        $avg_seo    = count($seo_scores) > 0 ? round(array_sum($seo_scores) / count($seo_scores)) : 0;
+        $low_seo    = count(array_filter($seo_scores, fn($s) => $s < 50));
+
+        $geo_tagged = array_filter($mj_posts, fn($p) => (bool) get_post_meta($p->ID, '_mj_geo_tag', true));
+        $geo_pct    = count($mj_posts) > 0 ? round(count($geo_tagged) / count($mj_posts) * 100) : 0;
+
+        // V2 — Logo
+        $logo_url = get_option('mj_logo_url', '');
         ?>
         <style>
         #mj-dash *{box-sizing:border-box;margin:0;padding:0}
-        #mj-dash{background:#F7F3EE;border-radius:12px;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;border:0.5px solid #E0D5C5;max-width:960px;margin-top:16px}
+        #mj-dash{background:#F7F3EE;border-radius:12px;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;border:0.5px solid #E0D5C5;max-width:980px;margin-top:16px}
+        #mj-dash .mj-seo-alert{background:#FEF2F2;border-bottom:0.5px solid #FECACA;padding:9px 24px;font-size:12px;color:#991B1B;display:flex;align-items:center;gap:8px;}
         #mj-dash .mj-topbar{background:#fff;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:0.5px solid #E0D5C5}
         #mj-dash .mj-logo{display:flex;align-items:center;gap:10px}
         #mj-dash .mj-logo-dot{width:8px;height:8px;border-radius:50%;background:#B8935A;flex-shrink:0}
@@ -79,12 +94,13 @@ if (!function_exists('mj_render_kpi_dashboard_page')) {
         #mj-dash .mj-logo-sub{font-size:10px;color:#9A7850;letter-spacing:.08em;text-transform:uppercase}
         #mj-dash .mj-topbar-right{font-size:11px;color:#9A7850}
         #mj-dash .mj-layout{display:grid;grid-template-columns:176px 1fr}
-        #mj-dash .mj-sidebar{background:#F0EAE0;padding:20px 0;border-right:0.5px solid #E0D5C5;min-height:520px;position:relative;overflow:hidden}
+        #mj-dash .mj-sidebar{background:#F0EAE0;padding:20px 0;border-right:0.5px solid #E0D5C5;min-height:560px;position:relative;overflow:hidden}
         #mj-dash .mj-nav-label{font-size:9px;font-weight:500;color:#B8A080;letter-spacing:.1em;text-transform:uppercase;padding:0 16px;margin-bottom:8px;margin-top:16px}
         #mj-dash .mj-nav-item{display:flex;align-items:center;gap:9px;padding:8px 16px;font-size:12px;color:#6B4F30;text-decoration:none}
         #mj-dash .mj-nav-item:hover{background:rgba(184,147,90,.1);color:#4A3018}
         #mj-dash .mj-nav-item.active{background:rgba(184,147,90,.18);color:#7A4E20;border-right:2px solid #B8935A}
         #mj-dash .mj-nav-item .dashicons{font-size:14px;width:14px;height:14px}
+        #mj-dash .mj-nav-badge{font-size:9px;background:#D5EFEA;color:#0F6E56;padding:1px 5px;border-radius:10px;margin-left:auto;}
         #mj-dash .mj-content{padding:24px;background:#F7F3EE}
         #mj-dash .mj-page-title{font-size:18px;font-weight:500;color:#2A1F14}
         #mj-dash .mj-page-sub{font-size:12px;color:#9A7850;margin-top:3px}
@@ -122,9 +138,22 @@ if (!function_exists('mj_render_kpi_dashboard_page')) {
         </style>
 
         <div id="mj-dash">
+
+          <?php if ($low_seo > 0) : ?>
+          <div class="mj-seo-alert">
+            <span style="font-size:14px;">⚠</span>
+            <strong><?php echo intval($low_seo); ?> article(s)</strong> ont un score SEO inférieur à 50/100 — consultez la bibliothèque pour optimiser.
+            <a href="<?php echo esc_url(admin_url('admin.php?page=mj-autopilot-library')); ?>" style="margin-left:8px;color:#991B1B;text-decoration:underline;">Voir →</a>
+          </div>
+          <?php endif; ?>
+
           <div class="mj-topbar">
             <div class="mj-logo">
-              <div class="mj-logo-dot"></div>
+              <?php if ($logo_url) : ?>
+                <img src="<?php echo esc_url($logo_url); ?>" alt="Logo" style="max-height:32px;border-radius:4px;">
+              <?php else : ?>
+                <div class="mj-logo-dot"></div>
+              <?php endif; ?>
               <div>
                 <div class="mj-logo-name">MJ Autopilot SEO</div>
                 <div class="mj-logo-sub">v<?php echo esc_html(MJ_AUTOPILOT_SEO_VERSION); ?> — melaniejulien.com</div>
@@ -137,14 +166,16 @@ if (!function_exists('mj_render_kpi_dashboard_page')) {
             <div class="mj-sidebar">
               <div class="mj-nav-label">Principal</div>
               <a href="<?php echo esc_url(admin_url('admin.php?page=mj-autopilot-seo')); ?>" class="mj-nav-item active">
-                <span class="dashicons dashicons-chart-area"></span> Dashboard KPIs
-              </a>
-              <a href="<?php echo esc_url(admin_url('admin.php?page=mj-autopilot-library')); ?>" class="mj-nav-item">
-                <span class="dashicons dashicons-edit"></span> Génération
+                <span class="dashicons dashicons-chart-area"></span> Dashboard
               </a>
               <a href="<?php echo esc_url(admin_url('admin.php?page=mj-autopilot-library')); ?>" class="mj-nav-item">
                 <span class="dashicons dashicons-book"></span> Bibliothèque
               </a>
+              <a href="<?php echo esc_url(admin_url('admin.php?page=mj-autopilot-calendar')); ?>" class="mj-nav-item">
+                <span class="dashicons dashicons-calendar-alt"></span> Calendrier
+                <span class="mj-nav-badge">NEW</span>
+              </a>
+
               <div class="mj-nav-label">Données</div>
               <a href="<?php echo esc_url(admin_url('admin.php?page=mj-autopilot-opportunities')); ?>" class="mj-nav-item">
                 <span class="dashicons dashicons-search"></span> Search Console
@@ -152,6 +183,11 @@ if (!function_exists('mj_render_kpi_dashboard_page')) {
               <a href="<?php echo esc_url(admin_url('admin.php?page=mj-autopilot-opportunities')); ?>" class="mj-nav-item">
                 <span class="dashicons dashicons-lightbulb"></span> Opportunités
               </a>
+              <a href="<?php echo esc_url(admin_url('admin.php?page=mj-autopilot-geo-report')); ?>" class="mj-nav-item">
+                <span class="dashicons dashicons-location"></span> Rapport GEO
+                <span class="mj-nav-badge">NEW</span>
+              </a>
+
               <div class="mj-nav-label">Système</div>
               <a href="<?php echo esc_url(admin_url('admin.php?page=mj-autopilot-settings')); ?>" class="mj-nav-item">
                 <span class="dashicons dashicons-admin-settings"></span> Réglages
@@ -170,9 +206,7 @@ if (!function_exists('mj_render_kpi_dashboard_page')) {
                   <ellipse cx="104" cy="30" rx="11" ry="7" transform="rotate(-10 104 30)" fill="#D4B888" opacity=".5"/>
                   <ellipse cx="94" cy="26" rx="8" ry="5" transform="rotate(-30 94 26)" fill="#B89050" opacity=".4"/>
                   <path d="M130 130 Q145 105 155 90 Q162 78 158 65 Q154 52 162 42 Q168 34 165 22" stroke="#B89050" stroke-width="1.2" fill="none"/>
-                  <path d="M158 65 Q168 60 172 52 Q175 45 168 42" stroke="#B89050" stroke-width="0.8" fill="none"/>
                   <ellipse cx="162" cy="50" rx="9" ry="6" transform="rotate(20 162 50)" fill="#C4A870" opacity=".45"/>
-                  <ellipse cx="170" cy="44" rx="7" ry="4" transform="rotate(10 170 44)" fill="#B89050" opacity=".35"/>
                   <ellipse cx="166" cy="28" rx="10" ry="6" transform="rotate(15 166 28)" fill="#D4B888" opacity=".4"/>
                 </svg>
               </div>
@@ -190,14 +224,12 @@ if (!function_exists('mj_render_kpi_dashboard_page')) {
                 </div>
                 <svg width="80" height="60" viewBox="0 0 80 60" fill="none" xmlns="http://www.w3.org/2000/svg" opacity=".7">
                   <path d="M40 58 Q42 45 50 38 Q58 31 55 20 Q52 10 44 14 Q38 17 40 26 Q42 35 35 38 Q28 41 26 52" stroke="#B8935A" stroke-width="1" fill="none"/>
-                  <path d="M40 26 Q32 22 28 28 Q24 34 30 38" stroke="#9A7040" stroke-width="0.8" fill="none"/>
                   <ellipse cx="32" cy="32" rx="8" ry="5" transform="rotate(-20 32 32)" fill="#C4A870" opacity=".5"/>
-                  <path d="M50 38 Q60 34 62 26 Q64 18 57 16" stroke="#9A7040" stroke-width="0.8" fill="none"/>
-                  <ellipse cx="58" cy="24" rx="9" ry="5" transform="rotate(15 58 24)" fill="#C4A870" opacity=".45"/>
                   <ellipse cx="44" cy="14" rx="8" ry="5" transform="rotate(-10 44 14)" fill="#C4A870" opacity=".4"/>
                 </svg>
               </div>
 
+              <!-- KPIs row -->
               <div class="mj-kpi-grid">
                 <div class="mj-kpi">
                   <div class="mj-kpi-label">Articles publiés</div>
@@ -209,15 +241,23 @@ if (!function_exists('mj_render_kpi_dashboard_page')) {
                   <div class="mj-kpi-delta"><?php echo esc_html($total_indexed); ?> indexés / <?php echo esc_html($total_pending); ?> en attente</div>
                 </div>
                 <div class="mj-kpi">
-                  <div class="mj-kpi-label">Clics GSC (total)</div>
-                  <div class="mj-kpi-val"><?php echo esc_html(number_format($total_clicks, 0, ',', ' ')); ?></div>
+                  <div class="mj-kpi-label">Score SEO moyen</div>
+                  <div class="mj-kpi-val" style="color:<?php echo $avg_seo >= 80 ? '#1D9E75' : ($avg_seo >= 50 ? '#B8935A' : '#D85A30'); ?>">
+                    <?php echo $avg_seo ?: '—'; ?>
+                    <?php if ($avg_seo) echo '/100'; ?>
+                  </div>
+                  <?php if ($low_seo > 0) : ?>
+                    <div class="mj-kpi-delta" style="color:#D85A30;"><?php echo $low_seo; ?> article(s) &lt; 50</div>
+                  <?php endif; ?>
                 </div>
                 <div class="mj-kpi">
-                  <div class="mj-kpi-label">Sujets en bibliothèque</div>
-                  <div class="mj-kpi-val"><?php echo function_exists('mj_get_library_data') ? count(mj_get_library_data()) : '—'; ?></div>
+                  <div class="mj-kpi-label">Couverture GEO</div>
+                  <div class="mj-kpi-val"><?php echo $geo_pct; ?>%</div>
+                  <div class="mj-kpi-delta"><?php echo count($geo_tagged); ?> / <?php echo count($mj_posts); ?> articles tagués</div>
                 </div>
               </div>
 
+              <!-- Row 2 : tunnels + top articles -->
               <div class="mj-row2">
                 <div class="mj-card">
                   <div class="mj-card-title"><span class="dashicons dashicons-networking"></span> Positions par tunnel</div>
@@ -254,6 +294,7 @@ if (!function_exists('mj_render_kpi_dashboard_page')) {
                 </div>
               </div>
 
+              <!-- Row 3 : indexation + actions -->
               <div class="mj-row2">
                 <div class="mj-card">
                   <div class="mj-card-title"><span class="dashicons dashicons-yes-alt"></span> Indexation Google</div>
@@ -272,15 +313,10 @@ if (!function_exists('mj_render_kpi_dashboard_page')) {
                 <div class="mj-card">
                   <div class="mj-card-title"><span class="dashicons dashicons-admin-links"></span> Actions rapides</div>
                   <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px">
-                    <a href="<?php echo esc_url(admin_url('admin.php?page=mj-autopilot-library')); ?>" class="mj-btn mj-btn-primary">
-                      Générer un article
-                    </a>
-                    <a href="<?php echo esc_url(admin_url('admin.php?page=mj-autopilot-opportunities')); ?>" class="mj-btn">
-                      Voir les opportunités SEO
-                    </a>
-                    <a href="<?php echo esc_url(admin_url('admin.php?page=mj-autopilot-settings')); ?>" class="mj-btn">
-                      Configuration API
-                    </a>
+                    <a href="<?php echo esc_url(admin_url('admin.php?page=mj-autopilot-library')); ?>" class="mj-btn mj-btn-primary">Bibliothèque éditoriale</a>
+                    <a href="<?php echo esc_url(admin_url('admin.php?page=mj-autopilot-calendar')); ?>" class="mj-btn">Calendrier TOFU/MOFU/BOFU</a>
+                    <a href="<?php echo esc_url(admin_url('admin.php?page=mj-autopilot-geo-report')); ?>" class="mj-btn">Rapport GEO hebdo</a>
+                    <a href="<?php echo esc_url(admin_url('admin.php?page=mj-autopilot-settings')); ?>" class="mj-btn">Configuration API</a>
                   </div>
                 </div>
               </div>
