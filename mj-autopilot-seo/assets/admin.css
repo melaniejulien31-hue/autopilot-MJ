@@ -1,0 +1,26 @@
+.mj-admin-wrapper {
+    background-color: #fcfbfa !important;
+    padding: 30px;
+    color: #2A1F14;
+}
+.mj-subtitle { font-size: 16px; color: #63513D; margin-bottom: 20px; }
+.mj-card {
+    background: #ffffff !important;
+    border: 1px solid #E6DFD7 !important;
+    border-radius: 12px !important;
+    padding: 24px !important;
+    margin-bottom: 24px;
+}
+.mj-dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+.kpi-box { position: relative; padding: 30px 24px !important; }
+.kpi-value { font-size: 32px; font-weight: 700; color: #2A1F14; }
+.kpi-label { font-size: 13px; color: #8C7A65; margin-top: 8px; }
+.kpi-icon { position: absolute; top: 24px; right: 24px; font-size: 36px; color: #B8935A; }
+.mj-badge { display: inline-block; padding: 4px 10px; font-size: 11px; font-weight: 600; border-radius: 6px; background-color: #F0EAE1; color: #63513D; }
+.badge-v9 { background-color: #2A1F14; color: #ffffff; font-size: 11px; padding: 3px 8px; border-radius: 4px; }
+.badge-blue { background-color: #E3F2FD; color: #0D47A1; }
+.badge-green { background-color: #E8F5E9; color: #1B5E20; }
+.badge-orange { background-color: #FFF3E0; color: #E65100; }
+.text-orange { color: #E65100 !important; }
+.text-gold { color: #B8935A !important; }
+.action-btn { background-color: #B8935A !important; border-color: #A37F49 !important; border-radius: 6px !important; color: #fff !important; }
